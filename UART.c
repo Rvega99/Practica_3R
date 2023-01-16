@@ -1,34 +1,32 @@
 #include "lib/include.h"
 
-extern void Configurar_UART1(void)
+extern void Configurar_UART3(void)
 {
-    SYSCTL->RCGCUART  = (1<<1);   //Paso 1 (RCGCUART) pag.388 0->Disable 1->Enable
-    //                    A         B       C         D        E       F 
-    SYSCTL->RCGCGPIO |= (0<<0) | (1<<1) | (0<<2) | (0<<3) | (0<<4) | (0<<5);     //Paso 2 (RCGCGPIO) pag.340 Enable clock port A
-    //(GPIOAFSEL) pag.815 Enable alternate function
-    GPIOB_AHB->AFSEL = (1<<1) | (1<<0);
-    //GPIO Port Control (GPIOPCTL) PA0-> U0Rx PA1-> U0Tx pag.1806
-    GPIOB_AHB->PCTL = (GPIOB_AHB->PCTL&0xFFFFFF00) | 0x00000011;// (1<<0) | (1<<4);//0x00000011
+    SYSCTL->RCGCUART  = (1<<3);   //Paso 1 (RCGCUART) pag.388 UART/modulo0 0->Disable 1->Enable
+    SYSCTL->RCGCGPIO |= (1<<0);     //Paso 2 (RCGCGPIO) pag.382 Enable clock port A
+    //(GPIOAFSEL) pag.1770 Enable alternate function
+    GPIOA_AHB->AFSEL = (1<<5) | (1<<4);
+    //GPIO Port Control (GPIOPCTL) PA4-> U3Rx PA5-> U3Tx pag.741
+    GPIOA_AHB->PCTL = (GPIOA_AHB->PCTL&0xFFFFFF00) | 0x00000011;// (1<<0) | (1<<4);//0x00000011
     // GPIO Digital Enable (GPIODEN) pag.682
-    GPIOB_AHB->DEN = (1<<0) | (1<<1);//PB1 PB0
-    //UART0 UART Control (UARTCTL) pag.918 DISABLE!!
-    UART1->CTL = (0<<9) | (0<<8) | (0<<0)| (0<<4);
+    GPIOA_AHB->DEN = (1<<0) | (1<<1);//PA4 PA5
+    //UART0 UART Control (UARTCTL) pag.918 Apagar para configurar primero todo y luego encender hasta abajo 
+    UART3->CTL = (0<<9) | (0<<8) | (0<<0);
 
     // UART Integer Baud-Rate Divisor (UARTIBRD) pag.914
-    /*
-    BRD = 20,000,000 / (16 * 9600) = 130.2
-    UARTFBRD[DIVFRAC] = integer(0.2 * 64 + 0.5) = 14
-    */
-    UART1->IBRD = 260;
-    // UART Fractional Baud-Rate Divisor (UARTFBRD) pag.915
-    UART1->FBRD = 27;
-    //  UART Line Control (UARTLCRH) pag.916
-    UART1->LCRH = (0x3<<5)|(1<<4);
-    //  UART Clock Configuration(UARTCC) pag.939
-    UART1->CC =(0<<0);
-    //Disable UART0 UART Control (UARTCTL) pag.918
-    UART1->CTL = (1<<0) | (1<<8) | (1<<9)| (1<<4);
+   //  Configurar_UART3(); //Jesus,Yesica,Carlos,Dulce,Rodolfo,Leonardo -fclk 80MHZ Baud-rate 19200
+        //  BRD = 80,000,000 / (16*19200) =260.4166
+        //  UARTFBRD[DIVFRAC] = integer(.4166 * 64 + 0.5)= 27
 
+    UART3->IBRD = 260;
+    // UART Fractional Baud-Rate Divisor (UARTFBRD) pag.915
+    UART3->FBRD = 27;
+    //  UART Line Control (UARTLCRH) pag.916
+    UART3->LCRH = (0x3<<5)|(1<<4);
+    //  UART Clock Configuration(UARTCC) pag.939
+    UART3->CC =(0<<0);
+    //Disable UART3 UART Control (UARTCTL) pag.918
+    UART3->CTL = (1<<0) | (1<<8) | (1<<9);
 
 
 }
@@ -39,15 +37,15 @@ extern char readChar(void)
     //UART DR data 906
     int v;
     char c;
-    while((UART1->FR & (1<<4)) != 0 );
-    v = UART1->DR & 0xFF;
+    while((UART3->FR & (1<<4)) != 0 );
+    v = UART3->DR & 0xFF;
     c = v;
     return c;
 }
 extern void printChar(char c)
 {
-    while((UART1->FR & (1<<5)) != 0 );
-    UART1->DR = c;
+    while((UART3->FR & (1<<5)) != 0 );
+    UART3->DR = c;
 }
 extern void printString(char* string2)
 {
